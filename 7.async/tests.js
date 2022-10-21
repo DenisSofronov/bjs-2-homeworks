@@ -1,68 +1,94 @@
-describe('Домашнее задание к лекции 7 «Асинхронность»', () => {
+class AlarmClock {
+  constructor() {
+    this.alarmCollection = [];
+    this.timerId = null;
+  }
 
-  let clock;
+  addClock(clockTime, callback, clockId) {
+    if (!clockId) {
+      throw new Error("Alarm clock ID not found");
+    }
+    if (this.alarmCollection.find((item) => item.clockId === clockId)) {
+      console.error("The alarm-clock with same ID already exists")
+    } else {
+      this.alarmCollection.push({
+        clockTime,
+        callback,
+        clockId
+      });
+    }
+  }
 
-  beforeEach(function(){
-    clock = new AlarmClock();
-  })
+  removeClock(clockId) {
+    this.alarmCollection = this.alarmCollection.filter((item) => item.clockId !== clockId);
+    if (this.alarmCollection.length === this.alarmCollection.length) {
+      console.log("Alarm-clock not found.");
+      return false;
+    } else {
+      console.log("Alarm-clock has been deleted");
+      return true;
+    }
+  }
 
-  it('необходимо создавать объект будильник', () => {
-    expect(clock).toBeTruthy();
-  });
+  getCurrentFormattedTime() {
+    const date = new Date();
+    let HH = date.getHours();
+    let MM = date.getMinutes();
+    if (HH < 10) {
+      HH = "0" + HH;
+    }
+    if (MM < 10) {
+      MM = "0" + MM;
+    }
+    return `${HH}:${MM}`;
+  }
 
-  it('необходимо создавать добавлять звонок', () => {
-    clock.addClock("16:45", f => f, 1);
-    expect(clock.alarmCollection.length).toEqual(1);
-  });
+  start() {
+    const checkClock = (alarmClock) => {
+      if (alarmClock.clockTime === this.getCurrentFormattedTime()) {
+        alarmClock.callback();
+      }
+    };
 
-  it('необходимо добавлять и удалять звонок', () => {
-    clock.addClock("16:45", f => f, 1);
-    expect(clock.alarmCollection.length).toEqual(1);
-    clock.removeClock(1);
-    expect(clock.alarmCollection.length).toEqual(0);
-  });
+    if (this.timerId !== null) {
+      this.timerId = setInterval(() => {
+        this.alarmCollection.forEach((alarmClock) => checkClock(alarmClock))
+      }, 1000);
+    }
+  }
 
-  it('id интервала должно отсутствовать до запуска', () => {
-    expect(clock.timerId).toBeNull();
-  });
+  stop() {
+    if (this.timerId !== null) {
+      clearInterval(this.timerId);
+    }
+    this.timerId = null;
+  }
 
-  it('необходимо запускать будильник', () => {
-    clock.addClock("16:45", f => f, 1);
-    clock.start();
-    expect(clock.timerId).toBeDefined();
-  });
+  printAlarms() {
+    console.log("the total number of alarm-clocks is ${this.alarmCollection.length}.");
+    this.alarmCollection.forEach((alarmClock) => console.log("Alarm-clock with ID ${alarmClock.clockId} is timed to go off at ${alarmClock.clockTime}."));
+  }
 
-  it('будильник должен возвращать время в формате HH:MM', () => {
-    const currentDate = new Date();
-    const hours = currentDate.getHours() < 10 ? `0${currentDate.getHours()}` : `${currentDate.getHours()}`;
-    const minutes = currentDate.getMinutes() < 10 ? `0${currentDate.getMinutes()}` : `${currentDate.getMinutes()}`;
-    expect(clock.getCurrentFormattedTime()).toEqual(`${hours}:${minutes}`);
-  });
+  clearAlarms() {
+    this.stop()
+    this.alarmCollection = [];
+  }
+}
 
-  it('будильник должен создавать таймер, а затем его удалять', () => {
-    clock.start();
-    expect(clock.timerId).toBeDefined();
-    clock.stop();
-    expect(clock.timerId).toBeNull();
-  });
+function testCase() {
+  let phoneAlarm = new AlarmClock();
+  phoneAlarm.addClock("09:00", () => console.log("Пора вставать"), 1);
+  phoneAlarm.addClock("09:01", () => {
+    console.log("Давай, вставай уже!");
+    phoneAlarm.removeClock(2)
+  }, 2);
+  phoneAlarm.addClock("09:02", () => {
+    console.log("Вставай, а то проспишь!");
+    phoneAlarm.clearAlarms();
+    phoneAlarm.printAlarms();
+  }, 3);
+  phoneAlarm.printAlarms()
+  phoneAlarm.start();
+}
 
-  it('Будильник должен создавать звонки, а затем очищать их все', () => {
-    clock.addClock("16:45", f => f, 1);
-    clock.addClock("16:45", f => f, 2);
-    clock.addClock("16:45", f => f, 3);
-    expect(clock.alarmCollection.length).toEqual(3);
-    clock.clearAlarms();
-    expect(clock.alarmCollection.length).toEqual(0);
-  });
-
-  it('будильник не должен создавать таймер с одинаковым id', () => {
-    clock.addClock("16:45", f => f, 1);
-    clock.addClock("16:45", f => f, 1);
-    expect(clock.alarmCollection.length).toEqual(1);
-  });
-
-  it('будильник должен выбрасывать объект ошибки, если id не был передан', () => {
-    expect(() => clock.addClock("16:45", f => f)).toThrow();
-  });
-
-});
+testCase();

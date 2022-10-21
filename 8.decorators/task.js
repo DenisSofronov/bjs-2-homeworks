@@ -1,35 +1,58 @@
-'use strict';
+function hash(args) {
+  return args.join("-");
+}
 
 function cachingDecoratorNew(func) {
-  let cache = [];
+  let cache = new Map();
 
-  function wrapper(...args) {
-    const hash = args.join(','); // получаем правильный хэш
-    let idx = cache.findIndex((item)=> item.hash === hash ); // ищем элемент, хэш которого равен нашему хэшу
-    if (idx !== -1 ) { // если элемент не найден
-      //cache[idx] = func(...args);
-
-      console.log("Из кэша: " + cache[idx].result); // индекс нам известен, по индексу в массиве лежит объект, как получить нужное значение?
-      return "Из кэша: " + cache[idx].result;
+  return function(...args) {
+    if (cache.size > 5) {
+      cache.delete(Array.from(cache.keys())[0]);
     }
 
-    let result = func(...args); // в кэше результата нет - придётся считать
-    //cache.push(hash) ; // добавляем элемент с правильной структурой
-    cache.push({hash, result});
-    if (cache.length > 5) {
-      cache.shift(); // если слишком много элементов в кэше надо удалить самый старый (первый)
+    let key = hash(args);
+    if (!cache.has(key)) {
+      let result = func.call(this, ...args);
+      cache.set(key, result);
+      console.log("Вычисляем: " + result);
+      return "Вычисляем: " + result;
     }
-    console.log("Вычисляем: " + result);
-    return "Вычисляем: " + result;
+    console.log("Из кэша: " + cache.get(key));
+    return "Из кэша: " + cache.get(key);
+  }
+}
+
+
+function debounceDecoratorNew(func, interval) {
+  let timeout;
+
+  function wrapper(arguments) {
+    if (!timeout) {
+      func.apply(this, arguments);
+    }
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      func.apply(this, arguments);
+    }, interval);
   }
 
   return wrapper;
-  }
-
-function debounceDecoratorNew(func) {
-  // Ваш код
 }
 
-function debounceDecorator2(func) {
-  // Ваш код
+function debounceDecorator2(func, interval) {
+  let timeout;
+  wrapper.count = 0;
+
+  function wrapper(arguments) {
+    if (!timeout) {
+      func.apply(this, arguments);
+      wrapper.count++;
+    }
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      func.apply(this, arguments);
+      wrapper.count++;
+    }, interval);
+  }
+  return wrapper;
 }
