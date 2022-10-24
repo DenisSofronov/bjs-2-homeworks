@@ -1,58 +1,77 @@
-function hash(args) {
-  return args.join("-");
-}
-
 function cachingDecoratorNew(func) {
-  let cache = new Map();
+  let cache = [];
 
-  return function(...args) {
-    if (cache.size > 5) {
-      cache.delete(Array.from(cache.keys())[0]);
-    }
+  function wrapper(...args) {
+    let result;
+    let key = args.join(',');
+    const hash = {
+      key,
+      result
+    };
+    let idx = cache.findIndex((itm) => key === itm.key);
+    let newCache = [];
 
-    let key = hash(args);
-    if (!cache.has(key)) {
-      let result = func.call(this, ...args);
-      cache.set(key, result);
+    if (idx !== -1) {
+      console.log("Из кэша: " + cache[idx].result);
+      return "Из кэша: " + cache[idx].result;
+    } else {
+
+      result = func(...args);
+      hash.result = result;
+      cache.push(hash);
+      if (cache.length > 5) {
+        newCache = cache.filter((itm) => itm != cache[0])
+        cache = newCache;
+      }
       console.log("Вычисляем: " + result);
       return "Вычисляем: " + result;
     }
-    console.log("Из кэша: " + cache.get(key));
-    return "Из кэша: " + cache.get(key);
+
   }
-}
-
-
-function debounceDecoratorNew(func, interval) {
-  let timeout;
-
-  function wrapper(arguments) {
-    if (!timeout) {
-      func.apply(this, arguments);
-    }
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-      func.apply(this, arguments);
-    }, interval);
-  }
-
   return wrapper;
 }
 
-function debounceDecorator2(func, interval) {
+function debounceDecoratorNew(func, ms) {
   let timeout;
+  let flag = false;
+
+  function wrapper(...args) {
+    if (flag === false) {
+      func(...args);
+      flag = true;
+      timeout = setTimeout(() => {
+        flag = false;
+      }, ms)
+    } else {
+      clearTimeout(timeout)
+      timeout = setTimeout(() => {
+        flag = false
+      }, ms);
+    }
+  }
+  return wrapper;
+}
+
+function debounceDecorator2(func, ms) {
+  let timeout;
+  let flag = false;
   wrapper.count = 0;
 
-  function wrapper(arguments) {
-    if (!timeout) {
-      func.apply(this, arguments);
-      wrapper.count++;
+  function wrapper(...args) {
+    wrapper.count = wrapper.count + 1;
+    if (flag === false) {
+      func(...args);
+      flag = true;
+      timeout = setTimeout(() => {
+        flag = false;
+      }, ms)
+    } else {
+      clearTimeout(timeout)
+      timeout = setTimeout(() => {
+        flag = false
+      }, ms);
     }
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-      func.apply(this, arguments);
-      wrapper.count++;
-    }, interval);
   }
+  wrapper.count;
   return wrapper;
 }
