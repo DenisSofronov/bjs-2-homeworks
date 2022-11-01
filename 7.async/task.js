@@ -67,7 +67,7 @@ class AlarmClock {
   }
 }
 
-
+// For example
 
 
 function testCase() {

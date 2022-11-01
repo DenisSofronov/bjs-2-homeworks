@@ -73,5 +73,5 @@ function debounceDecorator2(func, ms) {
     }
   }
   wrapper.count;
-  return wrapper;
+   return wrapper;
 }
